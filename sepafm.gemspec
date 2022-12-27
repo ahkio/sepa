@@ -28,4 +28,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'minitest',                  '~> 5.9'
   spec.add_development_dependency 'rake',                      '~> 13.0.6'
   spec.add_development_dependency 'rubyntlm',                  '~> 0.6'
+  spec.add_development_dependency 'byebug',                    '~> 11.1.3'
 end

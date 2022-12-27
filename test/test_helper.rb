@@ -1,6 +1,7 @@
 require 'codeclimate-test-reporter'
 require 'minitest/autorun'
 require 'dotenv'
+require 'byebug'
 Dotenv.load
 
 if ENV['CODECLIMATE_REPO_TOKEN']
