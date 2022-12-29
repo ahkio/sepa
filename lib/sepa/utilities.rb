@@ -6,12 +6,18 @@ module Sepa
     #
     # @param node [Nokogiri::Node] the node which the digest is calculated from
     # @return [String] the calculated digest
-    def calculate_digest(node)
-      sha1 = OpenSSL::Digest::SHA1.new
+    def calculate_digest(node, digest_method = 'sha1')
+      digest =
+        case digest_method
+        when 'sha256'
+          OpenSSL::Digest::SHA256.new
+        else
+          OpenSSL::Digest::SHA1.new
+        end
 
       canon_node = canonicalize_exclusively(node)
 
-      encode(sha1.digest(canon_node)).gsub(/\s+/, "")
+      encode(digest.digest(canon_node)).gsub(/\s+/, "")
     end
 
     # Takes a certificate, adds begin and end certificate texts and splits it into multiple lines so
@@ -297,8 +303,18 @@ module Sepa
       signature = doc.at('xmlns|SignatureValue', xmlns: DSIG).content
       signature = decode(signature)
 
+      signature_method = doc.at('xmlns|SignatureMethod', xmlns: DSIG)&.[]('Algorithm')
+
+      digest =
+        case signature_method
+        when 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256'
+          OpenSSL::Digest::SHA256.new
+        else
+          OpenSSL::Digest::SHA1.new
+        end
+
       # Return true or false
-      certificate.public_key.verify(OpenSSL::Digest::SHA1.new, signature, node)
+      certificate.public_key.verify(digest, signature, node)
     end
 
     # Verifies that a certificate has been signed by the private key of a root certificate
