@@ -91,21 +91,6 @@ module Sepa
         @template
       end
 
-      # Calculates digest hash for the given node in the given document. The node is canonicalized
-      # exclusively before digest calculation.
-      #
-      # @param doc [Nokogiri::XML] Document that contains the node
-      # @param node [String] The name of the node
-      # @return [String] the base64 encoded string
-      # @todo remove this method and use {Utilities#calculate_digest}
-      def calculate_digest(doc, node)
-        sha1       = OpenSSL::Digest::SHA1.new
-        node       = doc.at_css(node)
-        canon_node = canonicalize_exclusively(node)
-
-        encode(sha1.digest(canon_node)).gsub(/\s+/, "")
-      end
-
       # Calculates signature for the given node in the given document. Uses the signing private key
       # given to SoapBuilder for the signing. The node is canonicalized exclusively before signature
       # calculation.
@@ -172,13 +157,13 @@ module Sepa
 
         timestamp_id = set_node_id(@header_template, OASIS_UTILITY, 'Timestamp', 0)
 
-        timestamp_digest = calculate_digest(@header_template, 'wsu|Timestamp')
+        timestamp_digest = calculate_digest(@header_template.at_css('wsu|Timestamp'))
         dsig = "dsig|Reference[URI='##{timestamp_id}'] dsig|DigestValue"
         set_node(@header_template, dsig, timestamp_digest)
 
         body_id = set_node_id(@template, ENVELOPE, 'Body', 1)
 
-        body_digest = calculate_digest(@template, 'env|Body')
+        body_digest = calculate_digest(@template.at_css('env|Body'))
         dsig = "dsig|Reference[URI='##{body_id}'] dsig|DigestValue"
         set_node(@header_template, dsig, body_digest)
 
