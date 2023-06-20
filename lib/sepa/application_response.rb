@@ -50,7 +50,7 @@ module Sepa
 
       are.at('xmlns|Signature', xmlns: DSIG).remove
 
-      actual_digest = calculate_digest(are, digest_method)
+      actual_digest = calculate_digest(are, digest_method: digest_method)
 
       return true if digest_value == actual_digest
 

@@ -6,7 +6,7 @@ module Sepa
     #
     # @param node [Nokogiri::Node] the node which the digest is calculated from
     # @return [String] the calculated digest
-    def calculate_digest(node, digest_method = 'sha1')
+    def calculate_digest(node, digest_method: 'sha1', canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
       digest =
         case digest_method
         when 'sha256'
@@ -15,9 +15,30 @@ module Sepa
           OpenSSL::Digest::SHA1.new
         end
 
-      canon_node = canonicalize_exclusively(node)
+      canon_node = node.canonicalize(canonicalization_mode)
 
       encode(digest.digest(canon_node)).gsub(/\s+/, "")
+    end
+
+    # Calculates signature for the given node in the given document. Uses the signing private key
+    # given to SoapBuilder for the signing. The node is canonicalized exclusively before signature
+    # calculation.
+    #
+    # @param node [Nokogiri::XML::Node] Name of the node to calculate signature from
+    # @return [String] the base64 encoded signature
+    def calculate_signature(node, digest_method: 'sha1', canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
+      digest =
+        case digest_method
+        when 'sha256'
+          OpenSSL::Digest::SHA256.new
+        else
+          OpenSSL::Digest::SHA1.new
+        end
+
+      canon_signed_info_node = node.canonicalize(canonicalization_mode)
+      signature = @signing_private_key.sign(digest, canon_signed_info_node)
+
+      encode(signature).gsub(/\s+/, "")
     end
 
     # Takes a certificate, adds begin and end certificate texts and splits it into multiple lines so

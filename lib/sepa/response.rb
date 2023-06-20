@@ -260,7 +260,7 @@ module Sepa
           uri = uri.sub(/^#/, '')
           node = find_node_by_uri(uri)
 
-          nodes[uri] = calculate_digest(node, digest[:digest_method])
+          nodes[uri] = calculate_digest(node, digest_method: digest[:digest_method])
         end
 
         nodes

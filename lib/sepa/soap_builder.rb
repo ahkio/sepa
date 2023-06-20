@@ -91,30 +91,6 @@ module Sepa
         @template
       end
 
-      # Calculates signature for the given node in the given document. Uses the signing private key
-      # given to SoapBuilder for the signing. The node is canonicalized exclusively before signature
-      # calculation.
-      #
-      # @param doc [Nokogiri::XML] Document that contains the node
-      # @param node [String] Name of the node to calculate signature from
-      # @return [String] the base64 encoded signature
-      # @todo refactor to use canonicalization from utilities
-      def calculate_signature(doc, node, digest_method = 'sha1')
-        digest =
-          case digest_method
-          when 'sha256'
-            OpenSSL::Digest::SHA256.new
-          else
-            OpenSSL::Digest::SHA1.new
-          end
-
-        node                   = doc.at_css(node)
-        canon_signed_info_node = canonicalize_exclusively(node)
-        signature              = @signing_private_key.sign(digest, canon_signed_info_node)
-
-        encode(signature).gsub(/\s+/, "")
-      end
-
       # Loads soap header template to be later populated
       #
       # @return [Nokogiri::XML] the header as Nokogiri document
@@ -168,13 +144,13 @@ module Sepa
           node['Algorithm'] = digest_method == 'sha256' ? 'http://www.w3.org/2001/04/xmlenc#sha256' : 'http://www.w3.org/2001/04/xmlenc#sha1'
         end
 
-        timestamp_digest = calculate_digest(@header_template.at_css('wsu|Timestamp'), digest_method)
+        timestamp_digest = calculate_digest(@header_template.at_css('wsu|Timestamp'), digest_method: digest_method)
         dsig = "dsig|Reference[URI='##{timestamp_id}'] dsig|DigestValue"
         set_node(@header_template, dsig, timestamp_digest)
 
         body_id = set_node_id(@template, ENVELOPE, 'Body', 1)
 
-        body_digest = calculate_digest(@template.at_css('env|Body'), digest_method)
+        body_digest = calculate_digest(@template.at_css('env|Body'), digest_method: digest_method)
         dsig = "dsig|Reference[URI='##{body_id}'] dsig|DigestValue"
         set_node(@header_template, dsig, body_digest)
 
@@ -182,7 +158,7 @@ module Sepa
           node['Algorithm'] = digest_method == 'sha256' ? 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256' : 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha1'
         end
 
-        signature = calculate_signature(@header_template, 'dsig|SignedInfo', digest_method)
+        signature = calculate_signature(@header_template.at_css('dsig|SignedInfo'), digest_method: digest_method)
         set_node(@header_template, 'dsig|SignatureValue', signature)
 
         formatted_cert = format_cert(@own_signing_certificate)
