@@ -216,8 +216,6 @@ module Sepa
       # calculates the signature and adds needed values to signature node. Also adds
       # {#own_signing_certificate} to the signature node.
       def process_signature
-        digest_method = @bank == :nordea ? 'sha256' : 'sha1'
-
         # No signature for Certificate Requests
         return if %i(
           create_certificate
@@ -225,6 +223,16 @@ module Sepa
           get_certificate
           get_service_certificates
         ).include? @command
+
+        digest_method = @bank == :nordea ? 'sha256' : 'sha1'
+
+        if @bank == :nordea
+          digest_method_element = @application_request.at_css("dsig|DigestMethod", 'dsig' => 'http://www.w3.org/2000/09/xmldsig#')
+          digest_method_element['Algorithm'] = 'http://www.w3.org/2001/04/xmlenc#sha256'
+
+          signature_method_element = @application_request.at_css("dsig|SignatureMethod", 'dsig' => 'http://www.w3.org/2000/09/xmldsig#')
+          signature_method_element['Algorithm'] = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256'
+        end
 
         signature_node = remove_node('Signature', 'http://www.w3.org/2000/09/xmldsig#')
         digest = calculate_digest(@application_request, digest_method: digest_method, canonicalization_mode: canonicalization_mode)
