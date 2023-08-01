@@ -141,7 +141,7 @@ module Sepa
         timestamp_id = set_node_id(@header_template, OASIS_UTILITY, 'Timestamp', 0)
 
         @header_template.css('dsig|DigestMethod').each do |node|
-          node['Algorithm'] = digest_method == 'sha256' ? 'http://www.w3.org/2001/04/xmlenc#sha256' : 'http://www.w3.org/2001/04/xmlenc#sha1'
+          node['Algorithm'] = digest_method == 'sha256' ? 'http://www.w3.org/2001/04/xmlenc#sha256' : 'http://www.w3.org/2000/09/xmldsig#sha1'
         end
 
         timestamp_digest = calculate_digest(@header_template.at_css('wsu|Timestamp'), digest_method: digest_method)
@@ -155,7 +155,7 @@ module Sepa
         set_node(@header_template, dsig, body_digest)
 
         @header_template.css('dsig|SignatureMethod').each do |node|
-          node['Algorithm'] = digest_method == 'sha256' ? 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256' : 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha1'
+          node['Algorithm'] = digest_method == 'sha256' ? 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256' : 'http://www.w3.org/2000/09/xmldsig#rsa-sha1'
         end
 
         signature = calculate_signature(@header_template.at_css('dsig|SignedInfo'), digest_method: digest_method)
