@@ -5,6 +5,8 @@ module Sepa
     # exclusively.
     #
     # @param node [Nokogiri::Node] the node which the digest is calculated from
+    # @param digest_method [Symbol] the digest method to use, defaults to :sha1
+    # @param canonicalization_mode [Integer] the canonicalization mode to use, defaults to Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
     # @return [String] the calculated digest
     def calculate_digest(node, digest_method: :sha1, canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
       digest =
@@ -20,11 +22,13 @@ module Sepa
       encode(digest.digest(canon_node)).gsub(/\s+/, "")
     end
 
-    # Calculates signature for the given node in the given document. Uses the signing private key
-    # given to SoapBuilder for the signing. The node is canonicalized exclusively before signature
-    # calculation.
+    # Calculates signature for the given node.
+    # Uses the signing private key given to SoapBuilder for the signing.
+    # The node is canonicalized before signature calculation.
     #
     # @param node [Nokogiri::XML::Node] Name of the node to calculate signature from
+    # @param digest_method [Symbol] the digest method to use, defaults to :sha1
+    # @param canonicalization_mode [Integer] the canonicalization mode to use, defaults to Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
     # @return [String] the base64 encoded signature
     def calculate_signature(node, digest_method: :sha1, canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
       digest =
