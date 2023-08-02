@@ -43,9 +43,9 @@ module Sepa
       digest_method =
         case digest_method_raw
         when 'http://www.w3.org/2001/04/xmlenc#sha256'
-          'sha256'
+          :sha256
         else
-          'sha1'
+          :sha1
         end
 
       are.at('xmlns|Signature', xmlns: DSIG).remove

@@ -12,7 +12,7 @@ module Sepa
       end
 
       def digest_method
-        'sha256'
+        :sha256
       end
   end
 end

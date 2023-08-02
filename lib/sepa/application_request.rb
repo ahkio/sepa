@@ -224,9 +224,7 @@ module Sepa
           get_service_certificates
         ).include? @command
 
-        digest_method = @bank == :nordea ? 'sha256' : 'sha1'
-
-        if @bank == :nordea
+        if @digest_method == :sha256
           digest_method_element = @application_request.at_css("dsig|DigestMethod", 'dsig' => 'http://www.w3.org/2000/09/xmldsig#')
           digest_method_element['Algorithm'] = 'http://www.w3.org/2001/04/xmlenc#sha256'
 
@@ -235,10 +233,10 @@ module Sepa
         end
 
         signature_node = remove_node('Signature', 'http://www.w3.org/2000/09/xmldsig#')
-        digest = calculate_digest(@application_request, digest_method: digest_method, canonicalization_mode: canonicalization_mode)
+        digest = calculate_digest(@application_request, digest_method: @digest_method, canonicalization_mode: canonicalization_mode)
         add_node_to_root(signature_node)
         add_value_to_signature('DigestValue', digest)
-        add_value_to_signature('SignatureValue', calculate_signature(@application_request.at_css("dsig|SignedInfo", 'dsig' => 'http://www.w3.org/2000/09/xmldsig#'), digest_method: digest_method, canonicalization_mode: canonicalization_mode))
+        add_value_to_signature('SignatureValue', calculate_signature(@application_request.at_css("dsig|SignedInfo", 'dsig' => 'http://www.w3.org/2000/09/xmldsig#'), digest_method: @digest_method, canonicalization_mode: canonicalization_mode))
         add_value_to_signature('X509Certificate', format_cert(@own_signing_certificate))
       end
 

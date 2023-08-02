@@ -6,10 +6,10 @@ module Sepa
     #
     # @param node [Nokogiri::Node] the node which the digest is calculated from
     # @return [String] the calculated digest
-    def calculate_digest(node, digest_method: 'sha1', canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
+    def calculate_digest(node, digest_method: :sha1, canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
       digest =
         case digest_method
-        when 'sha256'
+        when :sha256
           OpenSSL::Digest::SHA256.new
         else
           OpenSSL::Digest::SHA1.new
@@ -26,10 +26,10 @@ module Sepa
     #
     # @param node [Nokogiri::XML::Node] Name of the node to calculate signature from
     # @return [String] the base64 encoded signature
-    def calculate_signature(node, digest_method: 'sha1', canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
+    def calculate_signature(node, digest_method: :sha1, canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
       digest =
         case digest_method
-        when 'sha256'
+        when :sha256
           OpenSSL::Digest::SHA256.new
         else
           OpenSSL::Digest::SHA1.new
