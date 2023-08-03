@@ -145,7 +145,7 @@ class NordeaGenericSoapBuilderTest < ActiveSupport::TestCase
   end
 
   def test_body_digest_is_calculated_correctly
-    sha1 = OpenSSL::Digest::SHA256.new
+    digest = OpenSSL::Digest::SHA256.new
 
     # Digest which is calculated from the body and added to the header
     reference_node = @doc.css('dsig|Reference')[1]
@@ -157,7 +157,7 @@ class NordeaGenericSoapBuilderTest < ActiveSupport::TestCase
 
     body_node = canonicalize_exclusively(body_node)
 
-    actual_digest = encode(sha1.digest(body_node)).strip
+    actual_digest = encode(digest.digest(body_node)).strip
 
     digest_method = @doc.css('dsig|DigestMethod')[1]['Algorithm']
 
@@ -190,7 +190,7 @@ class NordeaGenericSoapBuilderTest < ActiveSupport::TestCase
   end
 
   def test_header_timestamps_digest_is_calculated_correctly
-    sha1 = OpenSSL::Digest::SHA256.new
+    digest = OpenSSL::Digest::SHA256.new
 
     reference_node = @doc.css('dsig|Reference')[0]
     added_digest = reference_node.at('dsig|DigestValue').content
@@ -203,7 +203,7 @@ class NordeaGenericSoapBuilderTest < ActiveSupport::TestCase
 
     timestamp_node = canonicalize_exclusively(timestamp_node)
 
-    actual_digest = encode(sha1.digest(timestamp_node)).strip
+    actual_digest = encode(digest.digest(timestamp_node)).strip
 
     digest_method = @doc.css('dsig|DigestMethod')[0]['Algorithm']
 
@@ -212,7 +212,7 @@ class NordeaGenericSoapBuilderTest < ActiveSupport::TestCase
   end
 
   def test_signature_is_calculated_correctly
-    sha1 = OpenSSL::Digest::SHA256.new
+    digest = OpenSSL::Digest::SHA256.new
     signing_private_key = @nordea_generic_params.fetch(:signing_private_key)
 
     added_signature = @doc.xpath(
@@ -226,7 +226,7 @@ class NordeaGenericSoapBuilderTest < ActiveSupport::TestCase
     signed_info_node = canonicalize_exclusively(signed_info_node)
 
     actual_signature = encode(
-      signing_private_key.sign(sha1, signed_info_node),
+      signing_private_key.sign(digest, signed_info_node),
     ).gsub(/\s+/, "")
 
     signature_method = @doc.at_css('dsig|SignatureMethod')['Algorithm']
