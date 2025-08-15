@@ -360,7 +360,7 @@ module Sepa
       end
 
       def savon_globals
-        { wsdl: wsdl }.merge(savon_options[:globals] || {})
+        { wsdl: wsdl, ssl_ca_cert_file: '/etc/ssl/certs/ca-certificates.crt' }.merge(savon_options[:globals] || {})
       end
 
       def savon_locals
