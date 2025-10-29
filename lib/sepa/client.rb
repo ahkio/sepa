@@ -182,6 +182,10 @@ module Sepa
     # @return [SoapBuilder]
     attr_reader :soap
 
+    # Software id string that is sent to the bank as part of the application request.
+    # Defaults to "Sepa Transfer Library <version>"
+    attr_accessor :software_id
+
     # The list of banks that are currently supported by this gem
     BANKS = %i(
       danske
