@@ -27,8 +27,8 @@ class OpRenewCertApplicationRequestTest < ActiveSupport::TestCase
     @doc.at("xmlns|Signature", xmlns: 'http://www.w3.org/2000/09/xmldsig#').remove
 
     # Calculate digest
-    sha1          = OpenSSL::Digest::SHA1.new
-    actual_digest = encode(sha1.digest(@doc.canonicalize))
+    sha256          = OpenSSL::Digest::SHA256.new
+    actual_digest = encode(sha256.digest(@doc.canonicalize))
 
     # And then make sure the two are equal
     assert_equal actual_digest.strip, calculated_digest.strip

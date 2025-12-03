@@ -65,4 +65,10 @@ class OpCertApplicationRequestTest < ActiveSupport::TestCase
   test "validates against schema" do
     assert_valid_against_schema 'op/CertApplicationRequest_200812.xsd', @xml
   end
+
+  test "software id can be configured" do
+    ar_cert = Sepa::SoapBuilder.new(@op_get_certificate_params.merge({software_id: "Custom Software ID"})).application_request
+    xml = Nokogiri::XML(ar_cert.to_xml)
+    assert_equal xml.at_css("SoftwareId").content, "Custom Software ID"
+  end
 end
