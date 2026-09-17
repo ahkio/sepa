@@ -51,7 +51,7 @@ class NordeaCertApplicationRequestTest < ActiveSupport::TestCase
   end
 
   test 'should have service set' do
-    assert_equal @xml.at_css('Service').content, ''
+    assert_equal @xml.at_css('Service').content, 'service'
   end
 
   test 'should have content set' do
