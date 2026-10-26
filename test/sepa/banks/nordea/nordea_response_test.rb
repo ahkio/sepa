@@ -81,6 +81,12 @@ class NordeaResponseTest < ActiveSupport::TestCase
       command: :upload_file,
     }
     @body_altered = Sepa::NordeaResponse.new options
+
+    options = {
+      error: File.read("#{NORDEA_TEST_RESPONSE_PATH}/soap_fault.xml"),
+      command: :get_user_info,
+    }
+    @soap_fault = Sepa::NordeaResponse.new options
   end
 
   test 'valid responses are valid' do
@@ -206,5 +212,13 @@ class NordeaResponseTest < ActiveSupport::TestCase
 
     assert @response_with_code_24.valid?
     assert_empty @response_with_code_24.errors.messages
+  end
+
+  test 'fault string can be extracted from a soap fault' do
+    assert_equal 'Authentication failed', @soap_fault.fault_string
+  end
+
+  test 'fault string is nil when the response is not a soap fault' do
+    assert_nil @gui.fault_string
   end
 end
