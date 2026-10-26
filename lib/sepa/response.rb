@@ -219,6 +219,14 @@ module Sepa
       (node = doc.at("xmlns|#{node_name}", xmlns: namespace)) && node.content
     end
 
+    # Returns the fault string of a SOAP fault, which carries no response code
+    #
+    # @return [String] if the response is a SOAP fault
+    # @return [nil] if the response is not a SOAP fault
+    def fault_string
+      (node = doc.at_xpath('/env:Envelope/env:Body/env:Fault/faultstring', env: ENVELOPE)) && node.content
+    end
+
     private
 
       # Finds all reference nodes with digest values in the document and returns a hash with uri as
