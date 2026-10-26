@@ -126,6 +126,15 @@ class NordeaApplicationRequestTest < ActiveSupport::TestCase
     refute @doc_get.at_css("TargetId")
   end
 
+  test 'target id is set in get user info with corporate access' do
+    @nordea_generic_params[:command] = :get_user_info
+    @nordea_generic_params[:corporate_access] = true
+    doc = Nokogiri::XML(Sepa::SoapBuilder.new(@nordea_generic_params).application_request.to_xml)
+
+    assert_equal @nordea_generic_params[:target_id], doc.at_css("TargetId").content
+    assert_valid_against_schema 'application_request.xsd', doc
+  end
+
   def test_should_have_file_type_set_when_download_file_list
     assert_equal @doc_list.at_css("FileType").content, @nordea_generic_params[:file_type]
   end

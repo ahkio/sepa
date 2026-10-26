@@ -40,6 +40,13 @@ module Sepa
     #   '11111111A1'
     attr_accessor :target_id
 
+    # Sends Nordea's file requests to Corporate Access File Transfer instead of the Finnish Web
+    # Services. Corporate Access has its own file service address and requires the Signer ID of the
+    # agreement as {#target_id} in every request, get_user_info included.
+    #
+    # @return [Boolean]
+    attr_accessor :corporate_access
+
     # The environment to be used. One of {ENVIRONMENTS}.
     #
     # @return [Symbol]
@@ -205,6 +212,10 @@ module Sepa
     # and ALL will list every file
     STATUSES = %w(NEW DOWNLOADED ALL).freeze
 
+    # Address of Nordea's Corporate Access File Transfer file service. The certificate service is
+    # the same as with the Finnish Web Services.
+    NORDEA_CORPORATE_ACCESS_ENDPOINT = 'https://ws.ebridge.prod.nordea.com/ws/CorporateFileService'.freeze
+
     validates :bank, inclusion: { in: BANKS }
     validates :language, inclusion: { in: LANGUAGES }, allow_nil: true
 
@@ -213,6 +224,7 @@ module Sepa
     validate :check_file_type
     validate :check_environment
     validate :check_target_id
+    validate :check_corporate_access
     validate :check_content
     validate :check_pin
     validate :check_command
@@ -364,7 +376,12 @@ module Sepa
       end
 
       def savon_globals
-        { wsdl: wsdl }.merge(savon_options[:globals] || {})
+        globals = { wsdl: wsdl }
+        if corporate_access && STANDARD_COMMANDS.include?(command)
+          globals[:endpoint] = NORDEA_CORPORATE_ACCESS_ENDPOINT
+        end
+
+        globals.merge(savon_options[:globals] || {})
       end
 
       def savon_locals
