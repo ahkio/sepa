@@ -188,9 +188,12 @@ class NordeaResponseTest < ActiveSupport::TestCase
 
   test 'compressed content is decompressed' do
     file = '<Document>statement</Document>'
-    response = download_file_response(compressed: 'true', content: encode(Zlib.gzip(file)))
 
-    assert_equal file, decode(response.content)
+    ['true', '1', ' true '].each do |compressed|
+      response = download_file_response(compressed: compressed, content: encode(Zlib.gzip(file)))
+
+      assert_equal file, decode(response.content)
+    end
   end
 
   test 'uncompressed content is returned as is' do

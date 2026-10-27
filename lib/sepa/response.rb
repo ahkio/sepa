@@ -151,9 +151,9 @@ module Sepa
 
     # Returns the content of the response according to {#command}. When command is `:download_file`,
     # content is returned as a base64 encoded string, decompressed if the bank has compressed it,
-    # when {#command} is `:download_file_list`, the
-    # content is returned as xml, when {#command} is `:get_user_info`, the content is returned as xml
-    # and when {#command} is `:upload_file`, content is returned as xml
+    # when {#command} is `:download_file_list`, the content is returned as xml, when {#command} is
+    # `:get_user_info`, the content is returned as xml and when {#command} is `:upload_file`,
+    # content is returned as xml
     #
     # @return [String] the content as xml or base64 encoded string
     def content
@@ -313,7 +313,8 @@ module Sepa
       # @return [String] the content base64 encoded, decompressed if it was compressed
       def decompressed_content(xml, content)
         compressed = xml.at('xmlns|Compressed', xmlns: XML_DATA)
-        return content unless compressed && compressed.content == 'true'
+        # Compressed is an xs:boolean, which allows both true and 1
+        return content unless compressed && %w[true 1].include?(compressed.content.strip)
 
         encode(Zlib::GzipReader.new(StringIO.new(decode(content))).read)
       end
