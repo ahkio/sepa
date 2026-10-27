@@ -99,15 +99,15 @@ module Sepa
       errors.add(:file_type, FILE_TYPE_ERROR_MESSAGE) unless valid
     end
 
-    # Checks that {Client#target_id} is valid.
+    # Checks that {Client#target_id} is valid. Corporate Access requires it in get_user_info too.
     def check_target_id
       exclude_commands = [
         :create_certificate,
         :get_bank_certificate,
         :get_certificate,
-        :get_user_info,
         :renew_certificate,
       ]
+      exclude_commands << :get_user_info unless corporate_access
 
       exclude_banks = [
         :danske,
@@ -118,6 +118,15 @@ module Sepa
       return if exclude_commands.include?(command) || exclude_banks.include?(bank)
 
       check_presence_and_length(:target_id, 80, TARGET_ID_ERROR_MESSAGE)
+    end
+
+    # Checks that {Client#corporate_access} is used only with Nordea. Corporate Access has no test
+    # environment.
+    def check_corporate_access
+      return unless corporate_access
+      return if bank == :nordea && environment == :production
+
+      errors.add(:corporate_access, CORPORATE_ACCESS_ERROR_MESSAGE)
     end
 
     # Checks presence and length of an attribute

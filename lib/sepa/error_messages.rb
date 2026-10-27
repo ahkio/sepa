@@ -11,6 +11,10 @@ module Sepa
     # Error message which is shown when {Client#target_id} validation fails
     TARGET_ID_ERROR_MESSAGE = 'Target Id needs to be present and under 80 characters'.freeze
 
+    # Error message which is shown when {Client#corporate_access} validation fails
+    CORPORATE_ACCESS_ERROR_MESSAGE =
+      'Corporate Access can only be used with Nordea in the production environment'.freeze
+
     # Error message which is shown when {Client#file_type} validation fails
     FILE_TYPE_ERROR_MESSAGE = 'File type needs to be present and under 35 characters'.freeze
 

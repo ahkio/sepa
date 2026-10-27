@@ -172,6 +172,45 @@ class ClientTest < ActiveSupport::TestCase
     end
   end
 
+  test 'target id is checked with get user info only in corporate access' do
+    @nordea_generic_params[:command] = :get_user_info
+    @nordea_generic_params[:target_id] = nil
+    assert Sepa::Client.new(@nordea_generic_params).valid?
+
+    @nordea_generic_params[:corporate_access] = true
+    sepa = Sepa::Client.new @nordea_generic_params
+    refute sepa.valid?
+    assert_includes sepa.errors.messages.to_s, TARGET_ID_ERROR_MESSAGE
+  end
+
+  test 'corporate access is only allowed with nordea in production' do
+    @nordea_generic_params[:corporate_access] = true
+    assert Sepa::Client.new(@nordea_generic_params).valid?
+
+    @nordea_generic_params[:environment] = :test
+    sepa = Sepa::Client.new @nordea_generic_params
+    refute sepa.valid?
+    assert_includes sepa.errors.messages.to_s, CORPORATE_ACCESS_ERROR_MESSAGE
+
+    @danske_generic_params[:corporate_access] = true
+    sepa = Sepa::Client.new @danske_generic_params
+    refute sepa.valid?
+    assert_includes sepa.errors.messages.to_s, CORPORATE_ACCESS_ERROR_MESSAGE
+  end
+
+  test 'corporate access sends file requests to the corporate access endpoint' do
+    client = Sepa::Client.new @nordea_generic_params
+    assert_nil client.send(:savon_globals)[:endpoint]
+
+    @nordea_generic_params[:corporate_access] = true
+    client = Sepa::Client.new @nordea_generic_params
+    assert_equal Sepa::Client::NORDEA_CORPORATE_ACCESS_ENDPOINT, client.send(:savon_globals)[:endpoint]
+
+    @nordea_get_certificate_params[:corporate_access] = true
+    client = Sepa::Client.new @nordea_get_certificate_params
+    assert_nil client.send(:savon_globals)[:endpoint]
+  end
+
   test "language values are valid" do
     wrong_langs = ["Joo", 7, :protuction]
 

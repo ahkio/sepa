@@ -113,6 +113,11 @@ module Sepa
         add_node_after('Environment', 'TargetId', content: @target_id) if @bank == :nordea
       end
 
+      # Sets nodes' contents for get user info request
+      def set_get_user_info_nodes
+        add_node_after('Environment', 'TargetId', content: @target_id) if @corporate_access
+      end
+
       # Sets nodes' contents for download file list request
       def set_download_file_list_nodes
         add_node_after('Environment', 'TargetId', content: @target_id) if @bank == :nordea
