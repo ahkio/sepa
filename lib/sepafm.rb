@@ -118,6 +118,9 @@ OASIS_UTILITY = 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecur
 # Oasis secext namespace used in soap header for security purposes
 OASIS_SECEXT = 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd'.freeze
 
+# Namespace of exclusive XML canonicalization, used for its InclusiveNamespaces element
+EXC_C14N = 'http://www.w3.org/2001/10/xml-exc-c14n#'.freeze
+
 # Namespace used in application requests and application responses
 XML_DATA = 'http://bxd.fi/xmldata/'.freeze
 

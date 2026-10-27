@@ -250,7 +250,13 @@ module Sepa
               :sha1
             end
 
-          references[uri] = { digest: digest_value, digest_method: digest_method }
+          transforms_node = node.at('xmlns|Transforms', xmlns: DSIG)
+
+          references[uri] = {
+            digest: digest_value,
+            digest_method: digest_method,
+            inclusive_namespaces: inclusive_namespace_prefixes(transforms_node),
+          }
         end
 
         references
@@ -268,7 +274,11 @@ module Sepa
           uri = uri.sub(/^#/, '')
           node = find_node_by_uri(uri)
 
-          nodes[uri] = calculate_digest(node, digest_method: digest[:digest_method])
+          nodes[uri] = calculate_digest(
+            node,
+            digest_method: digest[:digest_method],
+            inclusive_namespaces: digest[:inclusive_namespaces],
+          )
         end
 
         nodes

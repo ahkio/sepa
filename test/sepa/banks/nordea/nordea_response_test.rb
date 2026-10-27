@@ -47,6 +47,12 @@ class NordeaResponseTest < ActiveSupport::TestCase
     @gui_sha256 = Sepa::NordeaResponse.new options
 
     options = {
+      response: File.read("#{NORDEA_TEST_RESPONSE_PATH}/gui_corporate_access.xml"),
+      command: :get_user_info,
+    }
+    @gui_corporate_access = Sepa::NordeaResponse.new options
+
+    options = {
       response: File.read("#{NORDEA_TEST_RESPONSE_PATH}/gc.xml"),
       command: :get_certificate,
     }
@@ -125,6 +131,13 @@ class NordeaResponseTest < ActiveSupport::TestCase
     assert @gui_sha256.hashes_match?
     assert @not_ok_response_code_response.hashes_match?
     assert @uf.hashes_match?
+  end
+
+  # Corporate Access signs its responses with exclusive canonicalization that has
+  # InclusiveNamespaces prefix lists
+  test 'corporate access response with inclusive namespaces verifies' do
+    assert @gui_corporate_access.hashes_match?
+    assert @gui_corporate_access.signature_is_valid?
   end
 
   test 'hashes dont match with incorrect responses' do
