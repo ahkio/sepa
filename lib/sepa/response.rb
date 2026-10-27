@@ -150,9 +150,10 @@ module Sepa
     end
 
     # Returns the content of the response according to {#command}. When command is `:download_file`,
-    # content is returned as a base64 encoded string, when {#command} is `:download_file_list`, the
-    # content is returned as xml, when {#command} is `:get_user_info`, the content is returned as xml
-    # and when {#command} is `:upload_file`, content is returned as xml
+    # content is returned as a base64 encoded string, decompressed if the bank has compressed it,
+    # when {#command} is `:download_file_list`, the content is returned as xml, when {#command} is
+    # `:get_user_info`, the content is returned as xml and when {#command} is `:upload_file`,
+    # content is returned as xml
     #
     # @return [String] the content as xml or base64 encoded string
     def content
@@ -162,7 +163,7 @@ module Sepa
         case @command
         when :download_file
           content_node = xml.at('xmlns|Content', xmlns: XML_DATA)
-          content_node.content if content_node
+          decompressed_content(xml, content_node.content) if content_node
         when :download_file_list
           content_node = xml.remove_namespaces!.at('FileDescriptors')
           content_node.to_xml if content_node
@@ -250,7 +251,13 @@ module Sepa
               :sha1
             end
 
-          references[uri] = { digest: digest_value, digest_method: digest_method }
+          transforms_node = node.at('xmlns|Transforms', xmlns: DSIG)
+
+          references[uri] = {
+            digest: digest_value,
+            digest_method: digest_method,
+            inclusive_namespaces: inclusive_namespace_prefixes(transforms_node),
+          }
         end
 
         references
@@ -268,7 +275,11 @@ module Sepa
           uri = uri.sub(/^#/, '')
           node = find_node_by_uri(uri)
 
-          nodes[uri] = calculate_digest(node, digest_method: digest[:digest_method])
+          nodes[uri] = calculate_digest(
+            node,
+            digest_method: digest[:digest_method],
+            inclusive_namespaces: digest[:inclusive_namespaces],
+          )
         end
 
         nodes
@@ -292,6 +303,20 @@ module Sepa
         return unless ar_node
 
         decode(ar_node.content)
+      end
+
+      # Decompresses downloaded content that the bank has compressed, as banks do e.g. for files
+      # larger than 1 MB. GZIP is the only compression method the banks use.
+      #
+      # @param xml [Nokogiri::XML::Document] the application response
+      # @param content [String] the base64 encoded content
+      # @return [String] the content base64 encoded, decompressed if it was compressed
+      def decompressed_content(xml, content)
+        compressed = xml.at('xmlns|Compressed', xmlns: XML_DATA)
+        # Compressed is an xs:boolean, which allows both true and 1
+        return content unless compressed && %w[true 1].include?(compressed.content.strip)
+
+        encode(Zlib::GzipReader.new(StringIO.new(decode(content))).read)
       end
 
       # Handles errors that have been passed from client

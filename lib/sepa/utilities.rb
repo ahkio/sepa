@@ -7,8 +7,10 @@ module Sepa
     # @param node [Nokogiri::Node] the node which the digest is calculated from
     # @param digest_method [Symbol] the digest method to use, defaults to :sha1
     # @param canonicalization_mode [Integer] the canonicalization mode to use, defaults to Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
+    # @param inclusive_namespaces [Array<String>, nil] namespace prefixes that exclusive
+    #   canonicalization handles inclusively
     # @return [String] the calculated digest
-    def calculate_digest(node, digest_method: :sha1, canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
+    def calculate_digest(node, digest_method: :sha1, canonicalization_mode: Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces: nil)
       digest =
         case digest_method
         when :sha256
@@ -17,7 +19,7 @@ module Sepa
           OpenSSL::Digest::SHA1.new
         end
 
-      canon_node = node.canonicalize(canonicalization_mode)
+      canon_node = node.canonicalize(canonicalization_mode, inclusive_namespaces)
 
       encode(digest.digest(canon_node)).gsub(/\s+/, "")
     end
@@ -216,9 +218,22 @@ module Sepa
     # Canonicalizes an xml node exclusively without comments
     #
     # @param value [Nokogiri::XML::Node, #canonicalize] the node to be canonicalized
+    # @param inclusive_namespaces [Array<String>, nil] namespace prefixes that are handled
+    #   inclusively
     # @return [String] the canonicalized node
-    def canonicalize_exclusively(value)
-      value.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0)
+    def canonicalize_exclusively(value, inclusive_namespaces = nil)
+      value.canonicalize(Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0, inclusive_namespaces)
+    end
+
+    # Returns the prefixes of the InclusiveNamespaces PrefixList given to an exclusive
+    # canonicalization, i.e. in a CanonicalizationMethod or Transforms node
+    #
+    # @param node [Nokogiri::XML::Node, nil] the CanonicalizationMethod or Transforms node
+    # @return [Array<String>] the prefixes, "#default" for the default namespace
+    # @return [nil] if the node has no InclusiveNamespaces
+    def inclusive_namespace_prefixes(node)
+      prefix_list = node&.at('ec|InclusiveNamespaces', ec: EXC_C14N)&.[]('PrefixList')
+      prefix_list&.split
     end
 
     # Creates a new OpenSSL X509 certificate from a string
@@ -322,7 +337,8 @@ module Sepa
              when :normal
                node.canonicalize
              when :exclusive
-               canonicalize_exclusively node
+               canonicalization_method_node = node.at('xmlns|CanonicalizationMethod', xmlns: DSIG)
+               canonicalize_exclusively node, inclusive_namespace_prefixes(canonicalization_method_node)
              end
 
       signature = doc.at('xmlns|SignatureValue', xmlns: DSIG).content

@@ -47,6 +47,12 @@ class NordeaResponseTest < ActiveSupport::TestCase
     @gui_sha256 = Sepa::NordeaResponse.new options
 
     options = {
+      response: File.read("#{NORDEA_TEST_RESPONSE_PATH}/gui_corporate_access.xml"),
+      command: :get_user_info,
+    }
+    @gui_corporate_access = Sepa::NordeaResponse.new options
+
+    options = {
       response: File.read("#{NORDEA_TEST_RESPONSE_PATH}/gc.xml"),
       command: :get_certificate,
     }
@@ -127,6 +133,13 @@ class NordeaResponseTest < ActiveSupport::TestCase
     assert @uf.hashes_match?
   end
 
+  # Corporate Access signs its responses with exclusive canonicalization that has
+  # InclusiveNamespaces prefix lists
+  test 'corporate access response with inclusive namespaces verifies' do
+    assert @gui_corporate_access.hashes_match?
+    assert @gui_corporate_access.signature_is_valid?
+  end
+
   test 'hashes dont match with incorrect responses' do
     refute @timestamp_altered.hashes_match?
     refute @body_altered.hashes_match?
@@ -171,6 +184,23 @@ class NordeaResponseTest < ActiveSupport::TestCase
   test 'content can be extracted' do
     refute_nil @df_vkeur.content
     refute_nil @df_vkeur_sha256.content
+  end
+
+  test 'compressed content is decompressed' do
+    file = '<Document>statement</Document>'
+
+    ['true', '1', ' true '].each do |compressed|
+      response = download_file_response(compressed: compressed, content: encode(Zlib.gzip(file)))
+
+      assert_equal file, decode(response.content)
+    end
+  end
+
+  test 'uncompressed content is returned as is' do
+    content = encode('<Document>statement</Document>')
+    response = download_file_response(compressed: 'false', content: content)
+
+    assert_equal content, response.content
   end
 
   test 'content can be extracted from download file list response' do
@@ -221,4 +251,16 @@ class NordeaResponseTest < ActiveSupport::TestCase
   test 'fault string is nil when the response is not a soap fault' do
     assert_nil @gui.fault_string
   end
+
+  private
+
+    def download_file_response(compressed:, content:)
+      application_response =
+        "<ApplicationResponse xmlns=\"#{XML_DATA}\"><Compressed>#{compressed}</Compressed>" \
+        "<CompressionMethod>GZIP</CompressionMethod><Content>#{content}</Content></ApplicationResponse>"
+      soap =
+        "<mod:ApplicationResponse xmlns:mod=\"#{BXD}\">#{encode(application_response)}</mod:ApplicationResponse>"
+
+      Sepa::NordeaResponse.new(response: soap, command: :download_file)
+    end
 end
