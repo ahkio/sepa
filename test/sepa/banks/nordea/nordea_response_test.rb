@@ -186,6 +186,20 @@ class NordeaResponseTest < ActiveSupport::TestCase
     refute_nil @df_vkeur_sha256.content
   end
 
+  test 'compressed content is decompressed' do
+    file = '<Document>statement</Document>'
+    response = download_file_response(compressed: 'true', content: encode(Zlib.gzip(file)))
+
+    assert_equal file, decode(response.content)
+  end
+
+  test 'uncompressed content is returned as is' do
+    content = encode('<Document>statement</Document>')
+    response = download_file_response(compressed: 'false', content: content)
+
+    assert_equal content, response.content
+  end
+
   test 'content can be extracted from download file list response' do
     refute_nil @dfl.content
     refute_nil @dfl_sha256.content
@@ -234,4 +248,16 @@ class NordeaResponseTest < ActiveSupport::TestCase
   test 'fault string is nil when the response is not a soap fault' do
     assert_nil @gui.fault_string
   end
+
+  private
+
+    def download_file_response(compressed:, content:)
+      application_response =
+        "<ApplicationResponse xmlns=\"#{XML_DATA}\"><Compressed>#{compressed}</Compressed>" \
+        "<CompressionMethod>GZIP</CompressionMethod><Content>#{content}</Content></ApplicationResponse>"
+      soap =
+        "<mod:ApplicationResponse xmlns:mod=\"#{BXD}\">#{encode(application_response)}</mod:ApplicationResponse>"
+
+      Sepa::NordeaResponse.new(response: soap, command: :download_file)
+    end
 end

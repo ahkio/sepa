@@ -5,7 +5,9 @@ require 'nokogiri'
 require 'openssl'
 require 'savon'
 require 'securerandom'
+require 'stringio'
 require 'time'
+require 'zlib'
 
 # Used throughout project so it's important that these be required first
 require 'sepa/utilities'

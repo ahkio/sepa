@@ -150,7 +150,8 @@ module Sepa
     end
 
     # Returns the content of the response according to {#command}. When command is `:download_file`,
-    # content is returned as a base64 encoded string, when {#command} is `:download_file_list`, the
+    # content is returned as a base64 encoded string, decompressed if the bank has compressed it,
+    # when {#command} is `:download_file_list`, the
     # content is returned as xml, when {#command} is `:get_user_info`, the content is returned as xml
     # and when {#command} is `:upload_file`, content is returned as xml
     #
@@ -162,7 +163,7 @@ module Sepa
         case @command
         when :download_file
           content_node = xml.at('xmlns|Content', xmlns: XML_DATA)
-          content_node.content if content_node
+          decompressed_content(xml, content_node.content) if content_node
         when :download_file_list
           content_node = xml.remove_namespaces!.at('FileDescriptors')
           content_node.to_xml if content_node
@@ -302,6 +303,19 @@ module Sepa
         return unless ar_node
 
         decode(ar_node.content)
+      end
+
+      # Decompresses downloaded content that the bank has compressed, as banks do e.g. for files
+      # larger than 1 MB. GZIP is the only compression method the banks use.
+      #
+      # @param xml [Nokogiri::XML::Document] the application response
+      # @param content [String] the base64 encoded content
+      # @return [String] the content base64 encoded, decompressed if it was compressed
+      def decompressed_content(xml, content)
+        compressed = xml.at('xmlns|Compressed', xmlns: XML_DATA)
+        return content unless compressed && compressed.content == 'true'
+
+        encode(Zlib::GzipReader.new(StringIO.new(decode(content))).read)
       end
 
       # Handles errors that have been passed from client
